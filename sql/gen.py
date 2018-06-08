@@ -1,26 +1,28 @@
 import sqlite3
 
-tables = {"engines.db": "CREATE TABLE IF NOT EXISTS ENGINES("
+database = "ships.db"
+create_queries = {
+        "engines": "CREATE TABLE IF NOT EXISTS ENGINES("
                         "engine text PRIMARY KEY,"
                         "power int,"
                         "type int"
                         ")",
-          "hulls.db": "CREATE TABLE IF NOT EXISTS HULLS"
-                      "(hull text PRIMARY KEY,"
+          "hulls": "CREATE TABLE IF NOT EXISTS HULLS("
+                      "hull text PRIMARY KEY,"
                       "armor int,"
                       "type int,"
                       "capacity int"
                       ")",
-          "weapons.db": "CREATE TABLE IF NOT EXISTS WEAPONS("
+          "weapons": "CREATE TABLE IF NOT EXISTS WEAPONS("
                         "weapon text PRIMARY KEY,"
                         "reload_speed int,"
                         "rotation_speed int,"
                         "diameter int,"
-                        " power_volley int,"
-                        " count int"
+                        "power_volley int,"
+                        "count int"
                         ")",
-          "ships.db": "CREATE TABLE IF NOT EXISTS SHIPS"
-                      "(ship text PRIMARY KEY,"
+          "ships": "CREATE TABLE IF NOT EXISTS SHIPS("
+                      "ship text PRIMARY KEY,"
                       "weapon text,"
                       "hull text,"
                       "engine text,"
@@ -31,9 +33,9 @@ tables = {"engines.db": "CREATE TABLE IF NOT EXISTS ENGINES("
           }
 
 
-def create_table(name, model):
+def create_table(model):
     try:
-        conn = sqlite3.connect(name)
+        conn = sqlite3.connect(database)
         cur = conn.cursor()
         cur.execute(model)
     except Exception:
@@ -45,5 +47,5 @@ def insert(name, value):
 
 
 if __name__ == "__main__":
-    for table in tables:
-        create_table(table, tables.get(table))
+    for create_query in create_queries:
+        create_table(create_queries.get(create_query))
