@@ -4,7 +4,16 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 
-class Hull(Base):
+class Vars:
+    items = []
+
+    @classmethod
+    def variables(cls):
+        return cls.items
+
+
+class Hull(Base, Vars):
+    items = ["armor", "type", "capacity"]
     __tablename__ = "hulls"
     hull = Column(String(250), primary_key=True)
     armor = Column(Integer)
@@ -12,7 +21,8 @@ class Hull(Base):
     capacity = Column(Integer)
 
 
-class Weapon(Base):
+class Weapon(Base, Vars):
+    items = ["reload_speed", "rotation_speed", "power_volley", "count"]
     __tablename__ = "weapons"
     weapon = Column(String(250), primary_key=True)
     reload_speed = Column(Integer)
@@ -22,14 +32,16 @@ class Weapon(Base):
     count = Column(Integer)
 
 
-class Engine(Base):
+class Engine(Base, Vars):
+    items = ["power", "type"]
     __tablename__ = "engines"
     engine = Column(String(250), primary_key=True)
     power = Column(Integer)
     type = Column(Integer)
 
 
-class Ship(Base):
+class Ship(Base, Vars):
+    items = ["weapon", "hull", "engine"]
     __tablename__ = "ships"
     ship = Column(String(250), primary_key=True)
     weapon = Column(String(250), ForeignKey('weapons.weapon'))

@@ -1,5 +1,6 @@
 import random
 
+from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker
 
 from objects.parts import Hull, Engine, Weapon, Ship
@@ -23,38 +24,14 @@ __ships_names__ = {"Миноносец тип {:d}",
 
 class Generator:
 
-    def __init__(self, engine) -> None:
-        self.used = set()
-        self.engine = engine
-
-    def initialize(self):
-        self.engine.connection()
-        Session = sessionmaker(bind=self.engine, expire_on_commit=False)
-        engines = [self.create_engine() for x in range(6)]
-        self._add(Session, engines)
-
-        weapons = [self.create_weapon() for x in range(20)]
-        self._add(Session, weapons)
-
-        hulls = [self.create_hull() for x in range(5)]
-        self._add(Session, hulls)
-
-        ships = [
-            self.create_ship(random.choice(weapons).weapon,
-                             random.choice(engines).engine,
-                             random.choice(hulls).hull)
-            for x in range(200)]
-        self._add(Session, ships)
-
-    def _add(self, session, objects):
-        session = session()
-        session.add_all(objects)
-        session.commit()
-        session.close()
+    def __init__(self) -> None:
         self.used = set()
 
-    def create_ship(self, weapon, engine, hull):
+    def create_ship(self, session):
         ship = self._gen_name(__ships_names__)
+        weapon = session.query(Weapon.weapon).order_by(func.random()).first().weapon
+        engine = session.query(Engine.engine).order_by(func.random()).first().engine
+        hull = session.query(Hull.hull).order_by(func.random()).first().hull
         return Ship(ship=ship, weapon=weapon, hull=hull, engine=engine)
 
     def _gen_name(self, names_list):
@@ -91,3 +68,53 @@ class Generator:
         count = random.randint(1, 10)
         return Weapon(weapon=weapon, reload_speed=reload_speed, rotation_speed=rotation_speed, diameter=diameter,
                       power_volley=power_volley, count=count)
+
+
+class Randomizer:
+    def __init__(self, engine):
+        self.session = sessionmaker(bind=engine)
+        self.gen = Generator()
+
+    def _add(self, session, objects):
+        session.add_all(objects)
+        session.commit()
+        self.gen.used = set()
+
+    def initialize(self):
+        session = self.session()
+        engines = [self.gen.create_engine() for x in range(6)]
+        self._add(session, engines)
+        weapons = [self.gen.create_weapon() for x in range(20)]
+        self._add(session, weapons)
+        hulls = [self.gen.create_hull() for x in range(5)]
+        self._add(session, hulls)
+        ships = [self.gen.create_ship(session) for x in range(200)]
+        self._add(session, ships)
+        session.close()
+
+    def randomize(self):
+        session = self.session()
+        self.rand_element(session, Hull, self.gen.create_hull)
+        self.rand_element(session, Weapon, self.gen.create_weapon)
+        self.rand_element(session, Engine, self.gen.create_engine)
+        self.rand_element(session, Ship, self.gen.create_ship, value=True)
+        session.close()
+
+    def rand_element(self, session, table, method, value=False):
+        for i in session.query(table):
+            if value:
+                self.randomize_item(i, method(session))
+            else:
+                self.randomize_item(i, method())
+        session.commit()
+
+    def _rbool(self):
+        return bool(random.getrandbits(1))
+
+    def randomize_item(self, item, another):
+        randomize = self._rbool()
+        if randomize:
+            for element in item.variables():
+                if self._rbool():
+                    setattr(item, element, getattr(another, element))
+        return item
