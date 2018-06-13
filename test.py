@@ -54,4 +54,5 @@ class TestShips(object):
             new_element = getattr(new, element)
             old_element = getattr(old, element)
             nose.tools.eq_(new_element, old_element,
-                           msg="Expected {type}: {old}, was {new}".format(type=table, old=old_element, new=new_element))
+                           msg="Expected {type} {element}: {old}, was {new}".format(type=table, element=element,
+                                                                                    old=old_element, new=new_element))
